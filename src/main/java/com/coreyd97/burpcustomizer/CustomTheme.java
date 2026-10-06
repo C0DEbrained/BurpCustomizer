@@ -1,12 +1,11 @@
 package com.coreyd97.burpcustomizer;
 
-import burp.theme.BurpLaf;
 import com.formdev.flatlaf.IntelliJTheme;
+import com.formdev.flatlaf.util.ColorFunctions;
 
-import java.awt.Color;
-import java.lang.reflect.InvocationTargetException;
 import javax.swing.*;
-import java.rmi.server.UID;
+import java.awt.Color;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Properties;
 
@@ -20,11 +19,21 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
         this.isPreview = isPreview;
         try {
             this.burpLaf = ClassLoader.getSystemClassLoader().loadClass("burp.theme.BurpLaf");
-            this.burpDark = ClassLoader.getSystemClassLoader().loadClass("burp.theme.BurpDarkLaf");
-            this.burpLight = ClassLoader.getSystemClassLoader().loadClass("burp.theme.BurpLightLaf");
         }catch (Exception e){
             throw new RuntimeException("Cannot find required Burp themes. " +
                     "This shouldn't happen as we shouldn't try to switch the theme if it's not supported.");
+        }
+        //Burp versions before 2025 shipped separate dark/light LaF classes.
+        //Newer versions build them from JSON swatches instead, see getBurpThemeProperties().
+        this.burpDark = loadOptionalClass("burp.theme.BurpDarkLaf");
+        this.burpLight = loadOptionalClass("burp.theme.BurpLightLaf");
+    }
+
+    private static Class loadOptionalClass(String name) {
+        try {
+            return ClassLoader.getSystemClassLoader().loadClass(name);
+        } catch (ClassNotFoundException e) {
+            return null;
         }
     }
 
@@ -33,10 +42,59 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
         ArrayList<Class<?>> lafClasses = super.getLafClassesForDefaultsLoading();
         lafClasses.remove(this.getTheme().getClass());
         lafClasses.add(burpLaf);
-        if(isDark()) lafClasses.add(burpDark);
-        else         lafClasses.add(burpLight);
+        Class burpVariant = isDark() ? burpDark : burpLight;
+        if (burpVariant != null) lafClasses.add(burpVariant);
         lafClasses.add(this.getTheme().getClass());
         return lafClasses;
+    }
+
+    //Newer Burp versions define their colour variables (Colors.*) in burp/theme/{Dark,Light}Theme.json,
+    //which BurpLaf.properties references. Without them, most Burp specific components lose their colours.
+    private Properties getBurpThemeProperties() {
+        try {
+            Class themeFactory = ClassLoader.getSystemClassLoader().loadClass("burp.theme.ThemeFactory");
+            String resource = isDark() ? "burp/theme/DarkTheme.json" : "burp/theme/LightTheme.json";
+            Object burpTheme = themeFactory.getMethod("loadBuiltIn", String.class).invoke(null, resource);
+            Method getAdditionalDefaults = burpTheme.getClass().getDeclaredMethod("getAdditionalDefaults");
+            getAdditionalDefaults.setAccessible(true);
+            return (Properties) getAdditionalDefaults.invoke(burpTheme);
+        } catch (Exception e) {
+            return new Properties();
+        }
+    }
+
+    //Map Burp's (2025+) palette onto the selected theme so Burp specific components follow it.
+    //Burp uses these variables inside borders and derived colours, so they must be concrete colours, not lazy values.
+    private void putBurpPaletteOverrides(Properties defaults) {
+        UIDefaults themeDefaults = new IntelliJTheme.ThemeLaf(getTheme()).getDefaults();
+        Color background = themeDefaults.getColor("Panel.background");
+        Color foreground = themeDefaults.getColor("Label.foreground");
+        Color disabledForeground = themeDefaults.getColor("Label.disabledForeground");
+        Color accent = themeDefaults.getColor("Component.accentColor");
+        if (background == null || foreground == null) return;
+
+        //mono.1 is the base background, mono.8 the strongest foreground.
+        for (int i = 1; i <= 5; i++) {
+            float amount = (i - 1) * 0.04f;
+            Color shade = isDark() ? ColorFunctions.lighten(background, amount) : ColorFunctions.darken(background, amount);
+            defaults.put("Colors.palette.mono." + i, toHex(shade));
+        }
+        defaults.put("Colors.palette.mono.6", toHex(disabledForeground != null ? disabledForeground : foreground));
+        defaults.put("Colors.palette.mono.7", toHex(foreground));
+        defaults.put("Colors.palette.mono.8", toHex(foreground));
+        defaults.put("Colors.palette.mono.core", toHex(background));
+
+        if (accent == null) return;
+        defaults.put("Colors.palette.primary.core", toHex(accent));
+        for (int i = 1; i <= 8; i++) {
+            float amount = Math.abs(4 - i) * 0.08f;
+            Color shade = i <= 4 ? ColorFunctions.darken(accent, amount) : ColorFunctions.lighten(accent, amount);
+            defaults.put("Colors.palette.primary." + i, toHex(shade));
+        }
+    }
+
+    private static String toHex(Color color) {
+        return String.format("#%02X%02X%02X", color.getRed(), color.getGreen(), color.getBlue());
     }
 
     @Override
@@ -74,7 +132,9 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
     protected Properties getAdditionalDefaults() {
         //Add Additional Overrides Here
         //This is actually run BEFORE the theme is loaded, so we need to use lazy loading to pull values from the theme.
-        Properties defaults = new Properties();
+        Properties defaults = getBurpThemeProperties();
+
+        if (!defaults.isEmpty()) putBurpPaletteOverrides(defaults);
 
         //Force the IntellijTheme class into loading the json containing defaults so we can use its values
 //        defaults.put("Test", "#00FF00");

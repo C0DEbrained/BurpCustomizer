@@ -1,40 +1,45 @@
 plugins {
     id("java")
-    id("io.freefair.lombok") version "8.6"
+    id("io.freefair.lombok") version "9.8.0"
 }
 
-sourceCompatibility = JavaVersion.VERSION_21
-targetCompatibility = JavaVersion.VERSION_21
+java {
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
 
 repositories {
     mavenCentral()
     maven {
-        url "https://jitpack.io"
+        url = "https://jitpack.io"
     }
 }
 
+// Optional: path to a Burp Suite jar, only needed to launch Burp from TestPlugin.
+// Usage: ./gradlew build -PburpJar=/path/to/burpsuite.jar
+def burpJar = findProperty("burpJar")
+
 dependencies {
-    compileOnly 'net.portswigger.burp.extensions:montoya-api:2023.12.1'
+    compileOnly 'net.portswigger.burp.extensions:montoya-api:2026.7'
     implementation 'com.rover12421.opensource:JFontChooser:1.0.5-3'
     implementation 'com.github.CoreyD97:Burp-Montoya-Utilities:2993e293'
-    implementation 'com.formdev:flatlaf-intellij-themes:2.4'
-    compileOnly 'com.formdev:flatlaf:2.4' //Already shipped in burp
-    compileOnly 'com.formdev:flatlaf-extras:2.4' //Already implemented in burp
-    implementation files('/home/corey/BurpSuitePro/burpsuite_pro.jar')
-//    testCompile files('/home/corey/BurpSuiteCommunity/burpsuite_community.jar')
+    // Burp's extension classloader only exposes com.formdev.flatlaf.ui to extensions, so FlatLaf core
+    // (pulled in transitively) and extras must be bundled. Keep in line with Burp's FlatLaf (3.7 in Burp 2026.x).
+    implementation 'com.formdev:flatlaf:3.7'
+    implementation 'com.formdev:flatlaf-intellij-themes:3.7'
+    implementation 'com.formdev:flatlaf-extras:3.7'
+    if (burpJar) {
+        testImplementation files(burpJar)
+    }
 }
 
 jar {
     archiveBaseName = project.name
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
 }
 
-task testJar(type: Jar) {
-    archiveBaseName = project.name + "-TEST"
-    from { configurations.testCompile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
-}
-
-tasks.withType(Jar) {
+tasks.withType(Jar).configureEach {
     destinationDirectory = file("$rootDir/releases")
 }
