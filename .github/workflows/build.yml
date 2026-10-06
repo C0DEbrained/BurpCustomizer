@@ -17,14 +17,14 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '21'
 
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
 
       - name: Resolve latest Burp Suite Community version
         id: burp
@@ -36,7 +36,7 @@ jobs:
 
       - name: Cache Burp Suite jar
         id: burp-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: burp/${{ steps.burp.outputs.name }}
           key: ${{ steps.burp.outputs.name }}
@@ -50,14 +50,14 @@ jobs:
       - name: Build and test against ${{ steps.burp.outputs.name }}
         run: ./gradlew build -PburpJar="$PWD/burp/${{ steps.burp.outputs.name }}"
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: BurpCustomizer
           path: releases/BurpCustomizer.jar
 
       - name: Publish release
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: releases/BurpCustomizer.jar
           generate_release_notes: true
