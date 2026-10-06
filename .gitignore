@@ -6,3 +6,4 @@ out/
 releases/
 *.json
 *.iml
+!src/main/resources/**/*.theme.json

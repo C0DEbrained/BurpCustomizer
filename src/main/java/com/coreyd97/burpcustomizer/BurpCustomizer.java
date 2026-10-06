@@ -43,6 +43,7 @@ public class BurpCustomizer implements BurpExtension {
                 .filter(lookAndFeelInfo -> !lookAndFeelInfo.getName().equalsIgnoreCase("Xcode-Dark"))
                 .map(flatIJLookAndFeelInfo -> (UIManager.LookAndFeelInfo) flatIJLookAndFeelInfo)
                         .collect(Collectors.toList());
+        themes.add(new UIManager.LookAndFeelInfo(CarbonfoxTheme.NAME, CarbonfoxTheme.class.getName()));
         themes.sort(Comparator.comparing(UIManager.LookAndFeelInfo::getName));
     }
 
@@ -70,9 +71,14 @@ public class BurpCustomizer implements BurpExtension {
             if (!selectedThemeFile.exists()) selectedThemeFile = null;
         }
 
-        FlatUIDefaultsInspector.install("ctrl shift alt Y");
-        FlatInspector.install("ctrl shift alt U");
-        patchPopupFactoryForFlatInspector();
+        //Debugging aids only, never let them prevent the extension from loading.
+        try {
+            FlatUIDefaultsInspector.install("ctrl shift alt Y");
+            FlatInspector.install("ctrl shift alt U");
+            patchPopupFactoryForFlatInspector();
+        } catch (Throwable e) {
+            montoya.logging().logToError("Could not install FlatLaf inspectors: " + e);
+        }
 
 //            Arrays.stream(Frame.getFrames()).filter(frame -> frame.getTitle().startsWith("Burp Suite") && frame.isVisible() && frame.getMenuBar() != null).findFirst().ifPresent(frame -> {
 //                menuItem = new JMenu("Customize");
