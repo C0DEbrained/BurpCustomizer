@@ -59,6 +59,23 @@ public class CarbonfoxTheme extends IntelliJTheme.ThemeLaf implements BurpThemeO
         p.put("Colors.palette.tertiary.4", "#c8a5ff");
         p.put("Colors.palette.tertiary.5", "#be95ff");
 
+        //Selected toggle buttons, e.g. Proxy "Intercept on": solid red so an active intercept is hard to miss.
+        p.put("Button.selectedBackground", "#ee5396");
+        p.put("Button.selectedBorderColor", "#ee5396");
+        p.put("Button.hoverSelectedBorderColor", "#f16da6");
+        p.put("Button.selectedForeground", "#161616");
+        p.put("ToggleButton.selectedBackground", "#ee5396");
+        p.put("ToggleButton.selectedForeground", "#161616");
+
+        //Proxy history / Logger row highlights, in Burp's menu order: red, orange, yellow, green, cyan,
+        //blue, pink, magenta, gray. Carbonfox has no orange or yellow, so those come from nightfox.
+        String[] highlights = {"#ee5396", "#f4a261", "#dbc074", "#25be6a", "#33b1ff",
+                "#78a9ff", "#ff7eb6", "#be95ff", "#7b7c7e"};
+        for (int i = 0; i < highlights.length; i++) {
+            p.put("Colors.ui.highlight." + i + ".background", highlights[i]);
+            p.put("Colors.ui.highlight." + i + ".text", "#161616");
+        }
+
         //HTTP message editor, matching the carbonfox syntax colours.
         String editor = "Colors.ui.editor.message.";
         p.put(editor + "background", "#161616");
