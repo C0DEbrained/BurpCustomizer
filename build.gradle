@@ -31,6 +31,20 @@ dependencies {
     if (burpJar) {
         testImplementation files(burpJar)
     }
+
+    testImplementation platform('org.junit:junit-bom:5.13.4')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+test {
+    useJUnitPlatform()
+    dependsOn jar
+    systemProperty 'java.awt.headless', 'true'
+    def extensionJar = jar.archiveFile
+    doFirst {
+        systemProperty 'extensionJar', extensionJar.get().asFile.absolutePath
+    }
 }
 
 jar {
@@ -38,6 +52,8 @@ jar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
     exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    // Burp-Montoya-Utilities embeds the Montoya API; Burp always provides its own copy.
+    exclude 'burp/api/**'
 }
 
 tasks.withType(Jar).configureEach {
