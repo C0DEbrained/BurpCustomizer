@@ -100,49 +100,22 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
     }
 
     @Override
-    public UIDefaults getDefaults() {
-        return super.getDefaults();
-//        UIDefaults defaults;
-//        FlatLaf burpBase;
-//        try {
-//            if (isDark()) {
-//                burpBase = (FlatLaf) burpDark.getConstructor().newInstance();
-//            }else{
-//                burpBase = (FlatLaf) burpLight.getConstructor().newInstance();
-//            }
-//            defaults = burpBase.getDefaults();
-//
-//        }catch (Exception e){
-//            defaults = super.getDefaults();
-//            BurpCustomizer.montoya.logging().logToError("Could not get Burp base theme! - " + e.getMessage());
-//        }
-//
-//        UIDefaults themeDefaults = super.getDefaults();
-//        themeDefaults.entrySet().parallelStream()
-//                .filter(e -> e.getKey().toString().matches("\\w+UI$")) //Find UI delegates
-//                        .forEach(e -> themeDefaults.remove(e.getKey())); //And remove so we don't overwrite them from burp.
-//
-//        defaults.putAll(themeDefaults);
-//        //For some reason, using lazy loading in getAdditionalDefaults for this property causes issues...
-//        defaults.put("TabbedPane.selectedBackground", defaults.get("TabbedPane.background"));
-//        return defaults;
-    }
-
-
-
-    @Override
     protected Properties getAdditionalDefaults() {
-        //Add Additional Overrides Here
-        //This is actually run BEFORE the theme is loaded, so we need to use lazy loading to pull values from the theme.
-        Properties defaults = getBurpThemeProperties();
+        Properties defaults = new Properties();
+        putLegacyBurpDefaults(defaults);
 
-        if (!defaults.isEmpty()) {
+        Properties burpTheme = getBurpThemeProperties();
+        if (!burpTheme.isEmpty()) {
+            defaults.putAll(burpTheme);
             putBurpPaletteOverrides(defaults);
             if (base instanceof BurpThemeOverrides) defaults.putAll(((BurpThemeOverrides) base).getBurpOverrides());
         }
+        return defaults;
+    }
 
-        //Force the IntellijTheme class into loading the json containing defaults so we can use its values
-//        defaults.put("Test", "#00FF00");
+    //Keys used by Burp versions before 2025, which read them straight from UIManager.
+    //This is run BEFORE the theme is loaded, so lazy loading is needed to pull values from the theme.
+    private void putLegacyBurpDefaults(Properties defaults) {
         //Color Palettes. 1-8, dark needs lightening, light needs darkening
         defaults.put("@accent", "lazy(Button.focusedBorderColor)");
         defaults.put("ColourPalette.mono0", "lazy(Label.background)");
@@ -237,8 +210,6 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
         defaults.put("Burp.textEditorCurrentLineBackground", "lazy(EditorPane.background)");
 //        defaults.put("Checkbox.icon.focusedSelectedBackground", "@accent");
 //        defaults.put("Checkbox.icon.hoverSelectedBackground", "@accent");
-
-        return defaults;
     }
     
 }
