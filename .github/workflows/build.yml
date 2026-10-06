@@ -1,0 +1,63 @@
+name: Build
+
+on:
+  push:
+    branches: [master]
+    tags: ['v*']
+  pull_request:
+  schedule:
+    # Weekly, to catch Burp releases that break the extension.
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Resolve latest Burp Suite Community version
+        id: burp
+        run: |
+          url='https://portswigger.net/burp/releases/download?product=community&type=Jar'
+          name=$(curl -sIL "$url" | grep -io 'filename=[^;]*' | tail -1 | cut -d= -f2 | tr -d '\r"')
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Burp Suite jar
+        id: burp-cache
+        uses: actions/cache@v4
+        with:
+          path: burp/${{ steps.burp.outputs.name }}
+          key: ${{ steps.burp.outputs.name }}
+
+      - name: Download Burp Suite Community
+        if: steps.burp-cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p burp
+          curl -sSL -o "burp/${{ steps.burp.outputs.name }}" "${{ steps.burp.outputs.url }}"
+
+      - name: Build and test against ${{ steps.burp.outputs.name }}
+        run: ./gradlew build -PburpJar="$PWD/burp/${{ steps.burp.outputs.name }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: BurpCustomizer
+          path: releases/BurpCustomizer.jar
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: releases/BurpCustomizer.jar
+          generate_release_notes: true

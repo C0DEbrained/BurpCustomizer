@@ -4,7 +4,7 @@
 </p>
 <hr>
 <p align="center">
-  <img src="https://img.shields.io/github/workflow/status/CoreyD97/BurpCustomizer/Java%20CI%20with%20Gradle?style=for-the-badge" alt="GitHub Workflow Status">
+  <img src="https://img.shields.io/github/actions/workflow/status/C0DEbrained/BurpCustomizer/build.yml?style=for-the-badge" alt="GitHub Workflow Status">
   <img src="https://img.shields.io/github/watchers/CoreyD97/BurpCustomizer?label=Watchers&style=for-the-badge" alt="GitHub Watchers">
   <img src="https://img.shields.io/github/stars/CoreyD97/BurpCustomizer?style=for-the-badge" alt="GitHub Stars">
   <img src="https://img.shields.io/github/downloads/CoreyD97/BurpCustomizer/total?style=for-the-badge" alt="GitHub All Releases">
@@ -74,8 +74,15 @@ All theme credits go to their original authors.
 ---
 
 ### Installing:
-1. Download the latest jar from https://github.com/CoreyD97/BurpCustomizer/releases
+1. Download the latest jar from https://github.com/C0DEbrained/BurpCustomizer/releases
 2. Add the jar to Burp Suite.
+
+Supports Burp Suite 2026.x (Community and Professional). The build is tested weekly against the latest
+Burp Suite Community release.
+
+### Bundled extras:
+- **Carbonfox**: a very dark theme based on the [carbonfox](https://github.com/EdenEast/nightfox.nvim) palette,
+  including Burp's HTTP message editor colours, row highlights and a red "Intercept on" button.
 
 ### Usage:
 1. Select the correct base theme from Burp's "User options -> Display" menu, to set the correct icon pack.
@@ -89,5 +96,8 @@ All theme credits go to their original authors.
 ### Building:
 If you want to build the project from source, e.g. for tweaking, or development
 1. Clone the repo
-2. Use gradle to build the jar: `gradle jar`
+2. Build the jar: `./gradlew jar`
 3. Add the built jar (`./releases/BurpCustomizer.jar`) to Burp Suite
+
+To check every theme against your Burp version, run the tests with a Burp jar:
+`./gradlew test -PburpJar=/path/to/burpsuite.jar`. Without it, the Burp specific tests are skipped.
