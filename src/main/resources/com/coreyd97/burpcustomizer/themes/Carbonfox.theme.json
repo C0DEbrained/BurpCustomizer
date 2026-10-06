@@ -16,6 +16,7 @@
 
     "sel0": "#2a2a2a",
     "sel1": "#525253",
+    "textSel": "#33425c",
 
     "red": "#ee5396",
     "green": "#25be6a",
@@ -101,19 +102,33 @@
       }
     },
     "TextField": {
+      "selectionBackground": "textSel",
+      "selectionForeground": "fg0",
       "background": "bg0"
     },
     "TextArea": {
+      "selectionBackground": "textSel",
+      "selectionForeground": "fg0",
       "background": "bg1"
     },
     "EditorPane": {
+      "selectionBackground": "textSel",
+      "selectionForeground": "fg0",
       "background": "bg1"
     },
     "PasswordField": {
+      "selectionBackground": "textSel",
+      "selectionForeground": "fg0",
       "background": "bg0"
     },
     "FormattedTextField": {
+      "selectionBackground": "textSel",
+      "selectionForeground": "fg0",
       "background": "bg0"
+    },
+    "TextPane": {
+      "selectionBackground": "textSel",
+      "selectionForeground": "fg0"
     },
     "Spinner": {
       "background": "bg0"

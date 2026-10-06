@@ -81,7 +81,7 @@ public class CarbonfoxTheme extends IntelliJTheme.ThemeLaf implements BurpThemeO
         p.put(editor + "background", "#161616");
         p.put(editor + "text", "#f2f4f8");
         p.put(editor + "currentLineBackground", "#252525");
-        p.put(editor + "selectionBackground", "#2a2a2a");
+        p.put(editor + "selectionBackground", "#33425c");
         p.put(editor + "gutterBorder", "#353535");
         p.put(editor + "lineNumbers", "#535353");
         p.put(editor + "lozengeBackground", "#353535");

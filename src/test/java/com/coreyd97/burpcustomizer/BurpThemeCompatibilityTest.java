@@ -99,6 +99,9 @@ class BurpThemeCompatibilityTest {
         assertEquals(new Color(0xee5396), UIManager.getColor("Button.selectedBackground"));
         assertEquals(new Color(0xee5396), UIManager.getColor("Colors.ui.highlight.0.background"));
         assertEquals(new Color(0x78a9ff), UIManager.getColor("Colors.palette.primary.core"));
+        assertEquals(new Color(0x33425c), UIManager.getColor("Colors.ui.editor.message.selectionBackground"));
+        assertEquals(new Color(0x33425c), UIManager.getColor("TextArea.selectionBackground"));
+        assertEquals(new Color(0x353535), UIManager.getColor("Table.selectionBackground"));
     }
 
     private static boolean isBurpOnClasspath() {
