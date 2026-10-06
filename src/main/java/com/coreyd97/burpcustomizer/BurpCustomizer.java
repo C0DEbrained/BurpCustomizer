@@ -43,6 +43,7 @@ public class BurpCustomizer implements BurpExtension {
                 .filter(lookAndFeelInfo -> !lookAndFeelInfo.getName().equalsIgnoreCase("Xcode-Dark"))
                 .map(flatIJLookAndFeelInfo -> (UIManager.LookAndFeelInfo) flatIJLookAndFeelInfo)
                         .collect(Collectors.toList());
+        themes.add(new UIManager.LookAndFeelInfo(CarbonfoxTheme.NAME, CarbonfoxTheme.class.getName()));
         themes.sort(Comparator.comparing(UIManager.LookAndFeelInfo::getName));
     }
 

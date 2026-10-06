@@ -13,9 +13,11 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
 
     Class burpLaf, burpDark, burpLight;
     private final boolean isPreview;
+    private final IntelliJTheme.ThemeLaf base;
 
     public CustomTheme(IntelliJTheme.ThemeLaf base, boolean isPreview) {
         super(base.getTheme());
+        this.base = base;
         this.isPreview = isPreview;
         try {
             this.burpLaf = ClassLoader.getSystemClassLoader().loadClass("burp.theme.BurpLaf");
@@ -134,7 +136,10 @@ public class CustomTheme extends IntelliJTheme.ThemeLaf {
         //This is actually run BEFORE the theme is loaded, so we need to use lazy loading to pull values from the theme.
         Properties defaults = getBurpThemeProperties();
 
-        if (!defaults.isEmpty()) putBurpPaletteOverrides(defaults);
+        if (!defaults.isEmpty()) {
+            putBurpPaletteOverrides(defaults);
+            if (base instanceof BurpThemeOverrides) defaults.putAll(((BurpThemeOverrides) base).getBurpOverrides());
+        }
 
         //Force the IntellijTheme class into loading the json containing defaults so we can use its values
 //        defaults.put("Test", "#00FF00");
