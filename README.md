@@ -96,8 +96,16 @@ Burp Suite Community release.
 ### Building:
 If you want to build the project from source, e.g. for tweaking, or development
 1. Clone the repo
-2. Build the jar: `./gradlew jar`
+2. Build the jar: `./gradlew assemble`
 3. Add the built jar (`./releases/BurpCustomizer.jar`) to Burp Suite
 
 To check every theme against your Burp version, run the tests with a Burp jar:
 `./gradlew test -PburpJar=/path/to/burpsuite.jar`. Without it, the Burp specific tests are skipped.
+
+#### How the extension is loaded
+Burp's extension classloader only exposes the JDK, the Montoya API and `com.formdev.flatlaf.ui` to extensions,
+but a theme has to run on Burp's own FlatLaf and `burp.theme` classes. The jar therefore contains a single
+bootstrap class (`CustomizerBootstrap`) and a nested `burpcustomizer-impl.jar`, which the bootstrap loads with
+Burp's application classloader as parent. FlatLaf is never bundled; it is compiled against the version Burp
+ships (`burpFlatLaf` in `build.gradle`), so bump it when Burp updates FlatLaf.
+`ExtensionIsolationTest` loads the built jar under the same classloader restrictions to catch regressions.

@@ -15,21 +15,38 @@ repositories {
     }
 }
 
-// Optional: path to a Burp Suite jar, only needed to launch Burp from TestPlugin.
+// Optional: path to a Burp Suite jar. Enables the Burp specific tests and launching Burp from TestPlugin.
 // Usage: ./gradlew build -PburpJar=/path/to/burpsuite.jar
 def burpJar = findProperty("burpJar")
 
+// FlatLaf version shipped inside Burp. The extension runs on Burp's copy, so compile against the same one.
+def burpFlatLaf = '3.7.1'
+
+sourceSets {
+    // The only classes Burp loads directly, see CustomizerBootstrap.
+    bootstrap
+}
+
 dependencies {
+    bootstrapCompileOnly 'net.portswigger.burp.extensions:montoya-api:2026.7'
+
     compileOnly 'net.portswigger.burp.extensions:montoya-api:2026.7'
+    // Provided by Burp at runtime, never bundled.
+    compileOnly "com.formdev:flatlaf:$burpFlatLaf"
+    compileOnly "com.formdev:flatlaf-extras:$burpFlatLaf"
+    implementation("com.formdev:flatlaf-intellij-themes:$burpFlatLaf") {
+        exclude group: 'com.formdev', module: 'flatlaf'
+    }
     implementation 'com.rover12421.opensource:JFontChooser:1.0.5-3'
     implementation 'com.github.CoreyD97:Burp-Montoya-Utilities:2993e293'
-    // Burp's extension classloader only exposes com.formdev.flatlaf.ui to extensions, so FlatLaf core
-    // (pulled in transitively) and extras must be bundled. Keep in line with Burp's FlatLaf (3.7 in Burp 2026.x).
-    implementation 'com.formdev:flatlaf:3.7'
-    implementation 'com.formdev:flatlaf-intellij-themes:3.7'
-    implementation 'com.formdev:flatlaf-extras:3.7'
+
+    testCompileOnly 'net.portswigger.burp.extensions:montoya-api:2026.7'
+    testCompileOnly "com.formdev:flatlaf:$burpFlatLaf"
     if (burpJar) {
         testImplementation files(burpJar)
+    } else {
+        testRuntimeOnly "com.formdev:flatlaf:$burpFlatLaf"
+        testRuntimeOnly "com.formdev:flatlaf-extras:$burpFlatLaf"
     }
 
     testImplementation platform('org.junit:junit-bom:5.13.4')
@@ -37,25 +54,37 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-test {
-    useJUnitPlatform()
-    dependsOn jar
-    systemProperty 'java.awt.headless', 'true'
-    def extensionJar = jar.archiveFile
-    doFirst {
-        systemProperty 'extensionJar', extensionJar.get().asFile.absolutePath
-    }
-}
-
-jar {
-    archiveBaseName = project.name
+// The extension implementation and its private libraries, nested inside the extension jar.
+def implementationJar = tasks.register('implementationJar', Jar) {
+    archiveFileName = 'burpcustomizer-impl.jar'
+    destinationDirectory = layout.buildDirectory.dir('implementation')
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    from sourceSets.main.output
     from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
-    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA'
+    exclude 'META-INF/*.SF', 'META-INF/*.DSA', 'META-INF/*.RSA', 'META-INF/MANIFEST.MF'
+    exclude 'module-info.class', 'META-INF/versions/*/module-info.class'
     // Burp-Montoya-Utilities embeds the Montoya API; Burp always provides its own copy.
     exclude 'burp/api/**'
 }
 
-tasks.withType(Jar).configureEach {
+def extensionJar = tasks.register('extensionJar', Jar) {
+    archiveBaseName = project.name
     destinationDirectory = file("$rootDir/releases")
+    from sourceSets.bootstrap.output
+    from implementationJar
+}
+
+tasks.named('assemble') {
+    dependsOn extensionJar
+}
+
+test {
+    useJUnitPlatform()
+    dependsOn extensionJar
+    systemProperty 'java.awt.headless', 'true'
+    def extensionJarFile = extensionJar.flatMap { it.archiveFile }
+    inputs.file(extensionJarFile)
+    doFirst {
+        systemProperty 'extensionJar', extensionJarFile.get().asFile.absolutePath
+    }
 }
